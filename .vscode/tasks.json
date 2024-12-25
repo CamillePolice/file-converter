@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Docker Compose Up",
+            "group": "build",
+            "script": "start",
+            "path": ".",
+            "type": "shell",
+            "command": "docker-compose up --build -d",
+            "label": "Start containers",
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Run GoDoc",
+            "group": "none",
+            "type": "shell",
+            "command": "docker-compose exec file-converter-api godoc -http=:8888",
+            "problemMatcher": [],
+            "isBackground": false,
+        }
+    ]
+}
