@@ -10,7 +10,6 @@
     // it's mapped to the actual host machine
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/devcontainers/features/node:1": {}
     },
     "forwardPorts": [
@@ -93,7 +92,7 @@
         "type=bind,source=${localWorkspaceFolder},target=/home/vscode/.ssh/",
         "type=bind,source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh/,readonly"
     ],
-    "postCreateCommand": "go version && npm --version && psql --version && pnpm --version",
+    "postCreateCommand": "go version && npm --version && pnpm --version"
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
     // Configure tool-specific properties.
