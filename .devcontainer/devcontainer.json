@@ -14,36 +14,16 @@
     },
     "forwardPorts": [
         3000,
-        9229,
-        9230,
-        9000,
-        9001,
-        11543
+        5173
     ],
     "portsAttributes": {
         "3000": {
             "label": "Nuxt Application Port",
             "onAutoForward": "notify"
         },
-        "9229": {
-            "label": "Debug Port",
-            "onAutoForward": "silent"
-        },
-        "9230": {
-            "label": "Debug Port",
-            "onAutoForward": "silent"
-        },
-        "9000": {
-            "label": "Gin Application Port",
+        "5173": {
+            "label": "Echo Server Port",
             "onAutoForward": "notify"
-        },
-        "9001": {
-            "label": "Dlv Debug Port",
-            "onAutoForward": "silent"
-        },
-        "9002": {
-            "label": "GoDoc Port",
-            "onAutoForward": "silent"
         }
     },
     "customizations": {

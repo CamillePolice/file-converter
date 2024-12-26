@@ -2,19 +2,35 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Connect to external session",
+            "name": "Debug with Air",
             "type": "go",
-            "debugAdapter": "dlv-dap", // `legacy` by default
             "request": "attach",
             "mode": "remote",
-            "port": 9001,
-            "host": "127.0.0.1", // can skip for localhost
-            "substitutePath": [
-                {
-                    "from": "${workspaceFolder}/asheal-api",
-                    "to": "/app"
-                },
-            ]
+            "remotePath": "${workspaceFolder}/file-converter-api",
+            "port": 2345,
+            "host": "127.0.0.1",
+            "showLog": true
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug front [chrome]",
+            "url": "http://localhost:11420",
+            "webRoot": "${workspaceFolder}/opvigil-frontend"
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Debug front [Edge]",
+            "url": "http://localhost:11420",
+            "webRoot": "${workspaceFolder}/opvigil-frontend"
+        },
+        {
+            "type": "firefox",
+            "request": "launch",
+            "name": "Debug front [Firefox]",
+            "url": "http://localhost:11420",
+            "webRoot": "${workspaceFolder}/opvigil-frontend"
         }
     ]
 }
