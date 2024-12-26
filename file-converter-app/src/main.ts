@@ -18,12 +18,18 @@ import {
 import App from './App.vue'
 import router from './router'
 import PrimeVue from 'primevue/config'
+import { ToastService, Toast, Button } from 'primevue'
 
 const app = createApp(App)
 
 library.add(faPlay, faPause, faForward, faBackward, faVolumeUp, faVolumeMute)
 
 app.component('font-awesome-icon', FontAwesomeIcon)
+app.use(PrimeVue)
+app.use(ToastService)
+
+app.component('Toast', Toast)
+app.component('Button', Button)
 
 app.use(createPinia())
 app.use(router)
