@@ -1,61 +1,141 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import Button from 'primevue/button';
+import Toast from 'primevue/toast';
+import { FileType } from '@/enum/file.enum';
+
+interface Props {
+    acceptedFormats: string;
+    conversionType: FileType;
+}
+
+interface EmitEvents {
+    (event: 'conversion-start'): void;
+    (event: 'conversion-complete', result: { success: boolean; error?: string }): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<EmitEvents>();
 
 const toast = useToast();
+const file = ref<File | null>(null);
+const isDragging = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-const file1 = ref(null);
-const file2 = ref(null);
-const isDraggingFirst = ref(false);
-const isDraggingSecond = ref(false);
+console.log("Props", props);
 
-const handleDragOver = (dropzone) => {
-    if (dropzone === 'first') {
-        isDraggingFirst.value = true;
-    } else {
-        isDraggingSecond.value = true;
-    }
+const isValidFileType = (file: File): boolean => {
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+    return props.acceptedFormats.includes(fileExtension);
 };
 
-const handleDragLeave = (dropzone) => {
-    if (dropzone === 'first') {
-        isDraggingFirst.value = false;
-    } else {
-        isDraggingSecond.value = false;
-    }
+const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    isDragging.value = true;
 };
 
-const handleDrop = (event, dropzone) => {
-    const droppedFile = event.dataTransfer.files[0];
+const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    isDragging.value = false;
+};
+
+const handleDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    const droppedFile = event.dataTransfer?.files[0];
 
     if (!droppedFile) return;
 
-    if (dropzone === 'first') {
-        isDraggingFirst.value = false;
-        file1.value = droppedFile;
-    } else {
-        isDraggingSecond.value = false;
-        file2.value = droppedFile;
+    isDragging.value = false;
+
+    if (!isValidFileType(droppedFile)) {
+        toast.add({
+            severity: 'error',
+            summary: 'Invalid File Type',
+            detail: `Please upload a valid file type: ${props.acceptedFormats}`,
+            life: 5000,  // Increased life time
+            closable: true,
+            styleClass: 'custom-toast-message'
+        });
+        return;
     }
 
-    // Optional: Show success message
+    file.value = droppedFile;
     toast.add({
         severity: 'success',
         summary: 'File Added',
         detail: `${droppedFile.name} has been added`,
-        life: 3000
+        life: 3000,
+        closable: true,
+        styleClass: 'custom-toast-message'
     });
-};
 
-const removeFile = (dropzone) => {
-    if (dropzone === 'first') {
-        file1.value = null;
-    } else {
-        file2.value = null;
+
+    // Start conversion process
+    try {
+        emit('conversion-start');
+        // Here you would implement your actual file conversion logic
+        // For now, simulating with a success
+        emit('conversion-complete', { success: true });
+    } catch (error) {
+        emit('conversion-complete', {
+            success: false,
+            error: error instanceof Error ? error.message : 'An unknown error occurred'
+        });
     }
 };
 
-const formatFileSize = (bytes) => {
+const removeFile = () => {
+    file.value = null;
+    if (fileInput.value) {
+        fileInput.value.value = '';
+    }
+};
+
+const handleFileSelect = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const selectedFile = target.files?.[0];
+
+    if (!selectedFile) return;
+
+    if (!isValidFileType(selectedFile)) {
+        toast.add({
+            severity: 'error',
+            summary: 'Invalid File Type',
+            detail: `Please upload a valid file type: ${props.acceptedFormats}`,
+            life: 5000,
+            closable: true,
+            styleClass: 'custom-toast-message'
+        });
+        return;
+    }
+
+    file.value = selectedFile;
+    toast.add({
+        severity: 'success',
+        summary: 'File Added',
+        detail: `${selectedFile.name} has been added`,
+        life: 3000,
+        closable: true,
+        styleClass: 'custom-toast-message'
+    });
+
+
+    try {
+        emit('conversion-start');
+        // Implement your actual file conversion logic here
+        // For now, simulating with a success
+        emit('conversion-complete', { success: true });
+    } catch (error) {
+        emit('conversion-complete', {
+            success: false,
+            error: error instanceof Error ? error.message : 'An unknown error occurred'
+        });
+    }
+};
+
+const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
 
     const k = 1024;
@@ -67,98 +147,93 @@ const formatFileSize = (bytes) => {
 </script>
 
 <template>
-    <div class="w-full max-w-4xl mx-auto p-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- First Drop Zone -->
-            <div class="flex flex-col space-y-4">
-                <h3 class="text-lg font-medium">File 1</h3>
-                <div :class="[
-                    'border-2 border-dashed rounded-lg p-8',
-                    'transition-colors duration-200 ease-in-out',
-                    'flex flex-col items-center justify-center',
-                    'min-h-48 space-y-4',
-                    isDraggingFirst ? 'border-primary bg-primary-50' : 'border-gray-300',
-                    file1 ? 'bg-gray-50' : 'bg-white'
-                ]" @dragover.prevent="handleDragOver('first')" @dragleave.prevent="handleDragLeave('first')"
-                    @drop.prevent="handleDrop($event, 'first')">
-                    <i class="pi pi-upload text-4xl" :class="isDraggingFirst ? 'text-primary' : 'text-gray-400'" />
+    <div class="w-full max-w-2xl mx-auto p-4">
+        <div class="flex flex-col space-y-4">
+            <div :class="[
+                'border-2 border-dashed rounded-lg p-8',
+                'transition-colors duration-200 ease-in-out',
+                'flex flex-col items-center justify-center',
+                'min-h-48 space-y-4',
+                isDragging ? 'border-primary bg-primary-50' : 'border-gray-300',
+                file ? 'bg-gray-50' : 'bg-white'
+            ]" @dragover="handleDragOver" @dragleave="handleDragLeave" @drop="handleDrop">
+                <i class="pi pi-upload text-4xl" :class="isDragging ? 'text-primary' : 'text-gray-400'" />
 
-                    <template v-if="!file1">
-                        <p class="text-center text-gray-600">
-                            Drag and drop first file here
-                            <br>
-                            <span class="text-sm text-gray-400">or click to browse</span>
-                        </p>
-                    </template>
+                <template v-if="!file">
+                    <input type="file" ref="fileInput" class="hidden" :accept="acceptedFormats"
+                        @change="handleFileSelect" />
+                    <p class="text-center text-gray-600 cursor-pointer" @click="fileInput?.click()">
+                        Drag and drop your file here
+                        <br>
+                        <span class="text-sm text-gray-400">or click to browse</span>
+                    </p>
+                    <p class="text-sm text-gray-400">
+                        Accepted formats: {{ acceptedFormats }}
+                    </p>
+                </template>
 
-                    <template v-else>
-                        <div class="w-full">
-                            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                                <div class="flex items-center space-x-3 truncate">
-                                    <i class="pi pi-file text-xl text-gray-500" />
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 truncate">
-                                            {{ file1.name }}
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            {{ formatFileSize(file1.size) }}
-                                        </p>
-                                    </div>
+                <template v-else>
+                    <div class="w-full">
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                            <div class="flex items-center space-x-3 truncate">
+                                <i class="pi pi-file text-xl text-gray-500" />
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        {{ file.name }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        {{ formatFileSize(file.size) }}
+                                    </p>
                                 </div>
-                                <Button icon="pi pi-times" severity="danger" text @click="removeFile('first')"
-                                    aria-label="Remove file" />
                             </div>
+                            <Button icon="pi pi-times" severity="danger" text @click="removeFile"
+                                aria-label="Remove file" class="text-red-500" />
                         </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Second Drop Zone -->
-            <div class="flex flex-col space-y-4">
-                <h3 class="text-lg font-medium">File 2</h3>
-                <div :class="[
-                    'border-2 border-dashed rounded-lg p-8',
-                    'transition-colors duration-200 ease-in-out',
-                    'flex flex-col items-center justify-center',
-                    'min-h-48 space-y-4',
-                    isDraggingSecond ? 'border-primary bg-primary-50' : 'border-gray-300',
-                    file2 ? 'bg-gray-50' : 'bg-white'
-                ]" @dragover.prevent="handleDragOver('second')" @dragleave.prevent="handleDragLeave('second')"
-                    @drop.prevent="handleDrop($event, 'second')">
-                    <i class="pi pi-upload text-4xl" :class="isDraggingSecond ? 'text-primary' : 'text-gray-400'" />
-
-                    <template v-if="!file2">
-                        <p class="text-center text-gray-600">
-                            Drag and drop second file here
-                            <br>
-                            <span class="text-sm text-gray-400">or click to browse</span>
-                        </p>
-                    </template>
-
-                    <template v-else>
-                        <div class="w-full">
-                            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                                <div class="flex items-center space-x-3 truncate">
-                                    <i class="pi pi-file text-xl text-gray-500" />
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 truncate">
-                                            {{ file2.name }}
-                                        </p>
-                                        <p class="text-sm text-gray-500">
-                                            {{ formatFileSize(file2.size) }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button icon="pi pi-times" severity="danger" text @click="removeFile('second')"
-                                    aria-label="Remove file" />
-                            </div>
-                        </div>
-                    </template>
-                </div>
+                    </div>
+                </template>
             </div>
         </div>
 
-        <!-- Optional Toast for errors -->
-        <Toast />
+        <div class="toast-container">
+            <Toast position="top-right" class="custom-toast" />
+        </div>
     </div>
 </template>
+
+<style scoped>
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+:deep(.custom-toast) {
+
+    /* Custom styling for the toast */
+    .p-toast-message {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .p-toast-message-success {
+        background: #f0fdf4;
+        border-left: 6px solid #22c55e;
+    }
+
+    .p-toast-message-error {
+        background: #fef2f2;
+        border-left: 6px solid #ef4444;
+    }
+
+    .p-toast-message-info {
+        background: #f0f9ff;
+        border-left: 6px solid #3b82f6;
+    }
+
+    .p-toast-icon-close {
+        color: #6b7280;
+    }
+}
+</style>
